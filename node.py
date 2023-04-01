@@ -30,30 +30,44 @@ def print_table(obj):
     print('-------------------------------------------------------')
 
 
-def ReconstructRoutingTable(obj, obj_links, neighbor, s):    
+def ReconstructRoutingTable(obj, obj_links, neighbor, s):
+    old_obj = obj    
     neighbor_name = neighbor['node']['name']
     #link_text = 'link'
     #counter = len(obj)
     for n in neighbor:
+        neighbor_link = obj_links[neighbor_name]
         '''if neighbor[n]['name'] not in obj_links.keys():
             link_text += str(counter)
             counter += 1
             obj[link_text]['name'] = neighbor[n]['name']
-            obj[link_text]['cost'] = neighbor[n]['cost'] + obj[obj_links[neighbor_name]]['cost']
+            obj[link_text]['cost'] = neighbor[n]['cost'] + obj[neighbor_link]['cost']
         else:'''
         if neighbor[n]['name'] != obj['node']['name'] and n != 'node':
-            neighbor_to_node = neighbor[n]['cost']
-            obj_to_node = min(obj[obj_links[neighbor[n]['name']]]['cost'], neighbor_to_node + obj[obj_links[neighbor_name]]['cost'])
-            if obj_to_node != obj[obj_links[neighbor[n]['name']]]['cost']:
-                obj[obj_links[neighbor[n]['name']]]['cost'] = obj_to_node
-                print_table(obj)
+            node_name = neighbor[n]['name']
+            node_link = obj_links[node_name]
+            neighbor_to_node = int(neighbor[n]['cost'])
+            print(f"From node {neighbor['node']['name']} to {node_name}, cost {neighbor_to_node}")
+            print(f"Current cost to {node_name}: {obj[node_link]['cost']}")
+            print(f"From {obj['node']['name']} to {neighbor['node']['name']}to {node_name}, cost = {neighbor_to_node + int(obj[neighbor_link]['cost'])}")
+            obj_to_node = min(int(obj[node_link]['cost']), neighbor_to_node + int(obj[neighbor_link]['cost']))
+            print(f"Bellman-ford equation result: {obj_to_node}")
+            if obj_to_node != int(obj[node_link]['cost']):
+                obj[node_link]['cost'] = obj_to_node
                 SendInfo(s, obj)
-            
-            
-                 
+                #print_table(obj)
+        elif n!= 'node':
+            if neighbor[n]['cost'] != obj[neighbor_link]['cost']:
+                obj[neighbor_link]['cost'] = neighbor[n]['cost']
+        
+    if old_obj != obj:     
+        SendInfo(s, obj)
+        return obj
+
+                
 def make_links_dict(obj):
-    links_table = {obj[key]['name']: obj[key] for key in obj if 'cost' in obj[key]}
-    return links_table
+    links_dict = {obj[key]['name']: key for key in obj if 'cost' in obj[key]}
+    return links_dict
 
 def listen_thread(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -145,6 +159,7 @@ while True:
             UpdateRouteCost(config_dict, node, newCost)
             print_table(config_dict)
             SendInfo(s, config_dict)
+            
             
             
             
