@@ -29,8 +29,31 @@ def print_table(obj):
     print('|    %-13s|    %-13s|    %-13s|' % (obj['link2']['name'],obj['link2']['cost'],obj['link2']['name']))
     print('-------------------------------------------------------')
 
-#def ReconstructRoutingTable(obj):
-    
+
+def ReconstructRoutingTable(obj, obj_links, neighbor, s):    
+    neighbor_name = neighbor['node']['name']
+    #link_text = 'link'
+    #counter = len(obj)
+    for n in neighbor:
+        '''if neighbor[n]['name'] not in obj_links.keys():
+            link_text += str(counter)
+            counter += 1
+            obj[link_text]['name'] = neighbor[n]['name']
+            obj[link_text]['cost'] = neighbor[n]['cost'] + obj[obj_links[neighbor_name]]['cost']
+        else:'''
+        if neighbor[n]['name'] != obj['node']['name'] and n != 'node':
+            neighbor_to_node = neighbor[n]['cost']
+            obj_to_node = min(obj[obj_links[neighbor[n]['name']]]['cost'], neighbor_to_node + obj[obj_links[neighbor_name]]['cost'])
+            if obj_to_node != obj[obj_links[neighbor[n]['name']]]['cost']:
+                obj[obj_links[neighbor[n]['name']]]['cost'] = obj_to_node
+                print_table(obj)
+                SendInfo(s, obj)
+            
+            
+                 
+def make_links_dict(obj):
+    links_table = {obj[key]['name']: obj[key] for key in obj if 'cost' in obj[key]}
+    return links_table
 
 def listen_thread(port):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -47,7 +70,8 @@ class RecvThread(threading.Thread):
     def __init__(self,port):
         super(RecvThread, self).__init__()
         self.port = port
-        self.received_dict = None
+        self._received_dict = None
+        self._received_links = None
 
     def run(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -55,10 +79,18 @@ class RecvThread(threading.Thread):
         while True:
             data, addr = s.recvfrom(1024)
             print("Recv: ")
-            received_dict = json.loads(str(data,encoding='utf-8'))
-            print_table(received_dict)
+            self._received_dict = json.loads(str(data,encoding='utf-8'))
+            #self._received_links = make_links_dict(self._received_dict)
+            print_table(self._received_dict)
+            ReconstructRoutingTable(config_dict, config_links, self._received_dict, s)
             #print_table(json.loads(str(data,encoding='utf-8')))
             print("Input command(FirstLoad, FirstSend, Bye, or MyRoutingTable):")
+            
+    def received_dict(self):
+        return self._received_dict
+    
+    def received_links(self):
+        return self._received_links
 
 class MyParser(configparser.ConfigParser):
     def as_dict(self):
@@ -97,7 +129,10 @@ while True:
         print("Send config finished")
     elif text == "FirstLoad":
         config_dict = load_ini(sys.argv[1])
+        for n in config_dict:
+            config_dict[n]['nextHop'] = config_dict[n]['name']
         print("Load config file finished")
+        config_links = make_links_dict(config_dict)
     elif text == "Bye":
         break
     elif text == "MyRoutingTable":
@@ -108,6 +143,10 @@ while True:
         else:
             node, newCost = params
             UpdateRouteCost(config_dict, node, newCost)
+            print_table(config_dict)
+            SendInfo(s, config_dict)
+            
+            
             
     else:
         print("Invalid command")
