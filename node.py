@@ -132,7 +132,7 @@ t.start()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 while True:
-    print("Input command(FirstLoad, FirstSend, Bye, or MyRoutingTable):")
+    print("Input command(FirstLoad, FirstSend, UpdateRouteCosts, Bye, or MyRoutingTable):")
     text, *params = sys.stdin.readline().strip().split()
     if text == "FirstSend":
         SendInfo(s, config_dict)
