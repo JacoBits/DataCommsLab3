@@ -14,19 +14,19 @@ def SendUpdate(socket, obj):
             socket.sendto(bytes(json.dumps(obj),'utf8'),(obj[link]['ip'],int(config_dict[link]['port'])))
         
 
-def UpdateRouteCost(obj, obj_links, node, cost):
+def UpdateRouteCost(obj, obj_links, direct, node, cost):
     if node in obj_links.keys():
         link = obj_links[node]
         obj[link]['cost'] = cost
+        direct[node] = cost
         obj['node']['updated'] = True
     
 def HandleMessage(neighbor, obj, object_links, direct_costs, socket):
     print_table(neighbor)
     ReconstructRoutingTable(obj, object_links, neighbor, direct_costs)
-    if obj['node']['updated'] or neighbor['node']['updated']:
+    if obj['node']['updated'] :
         SendUpdate(socket, obj)
-        if obj['node']['updated']:
-            obj['node']['updated'] = False
+        obj['node']['updated'] = False
 
 '''def BellmanFord(current, self_to_neighbor, neighbor_to_node):
     return min(current, self_to_neighbor + neighbor_to_node)'''
@@ -55,6 +55,7 @@ def ReconstructRoutingTable(obj, obj_links, neighbor, direct_costs):
     if neighbor[link_to_self]['cost'] != obj[neighbor_link]['cost']:
             #print(f"Cost from {obj['node']['name']} to {neighbor_name} changed from {obj[neighbor_link]['cost']} to {neighbor[link_to_self]['cost']}")    
             obj[neighbor_link]['cost'] = neighbor[link_to_self]['cost']
+            direct_costs[neighbor_name] = neighbor[link_to_self]['cost']
             obj['node']['updated'] = True
             #SendInfo(s, obj)
     
@@ -71,12 +72,12 @@ def ReconstructRoutingTable(obj, obj_links, neighbor, direct_costs):
         if target_name != self_name and n != 'node':
             target_link = obj_links[target_name]
             neighbor_to_target = int(neighbor[n]['cost'])
-            node_to_neighbor = int(obj[neighbor_link]['cost'])
+            node_to_neighbor = int(direct_costs[neighbor_name])
             if obj[target_link]['nextHop'] == neighbor_name and neighbor[n]['nextHop'] == obj['node']['name']:
                     obj_to_node = int(obj[target_link]['cost'])
                     obj_to_node += node_to_neighbor
                     obj[target_link]['cost'] = obj_to_node
-                    if obj[target_link]['cost'] > direct_costs[target_name]:
+                    if int(obj[target_link]['cost']) > int(direct_costs[target_name]):
                         obj[target_link]['cost'] = direct_costs[target_name]
                         obj[target_link]['nextHop'] = target_name
             else:
@@ -186,7 +187,7 @@ while True:
             print("Usage: UpdateRouteCost <node> <newcost>")
         else:
             node, newCost = params
-            UpdateRouteCost(config_dict, config_links, node, newCost)
+            UpdateRouteCost(config_dict, config_links, direct_costs, node, newCost)
             print_table(config_dict)
             SendUpdate(s, config_dict)
             config_dict['node']['updated'] = False
