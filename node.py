@@ -74,11 +74,12 @@ def ReconstructRoutingTable(obj, obj_links, neighbor, direct_costs):
             obj[link_text]['name'] = neighbor[n]['name']
             obj[link_text]['cost'] = int(neighbor[n]['cost']) + int(direct_costs[neighbor_name])
         else:
-        if target_name != self_name and n != 'node':
-            target_link = obj_links[target_name]
-            neighbor_to_target = int(neighbor[n]['cost'])
-            node_to_neighbor = int(direct_costs[neighbor_name])
-            if obj[target_link]['nextHop'] == neighbor_name and int(neighbor[target_link]['cost']) + node_to_neighbor  > int(obj[target_link]['cost']):
+            #OB: fixed indentation
+            if target_name != self_name and n != 'node':
+                target_link = obj_links[target_name]
+                neighbor_to_target = int(neighbor[n]['cost'])
+                node_to_neighbor = int(direct_costs[neighbor_name])
+                if obj[target_link]['nextHop'] == neighbor_name and int(neighbor[target_link]['cost']) + node_to_neighbor  > int(obj[target_link]['cost']):
                     obj_to_node = int(obj[target_link]['cost'])
                     obj_to_node += node_to_neighbor
                     obj[target_link]['cost'] = obj_to_node
