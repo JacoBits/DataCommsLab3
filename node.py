@@ -54,6 +54,11 @@ def ReconstructRoutingTable(obj, obj_links, neighbor, direct_costs):
     
     if neighbor[link_to_self]['cost'] != obj[neighbor_link]['cost']:
             #print(f"Cost from {obj['node']['name']} to {neighbor_name} changed from {obj[neighbor_link]['cost']} to {neighbor[link_to_self]['cost']}")    
+            for link in obj:
+                if link != 'node' and obj[link]['nextHop'] == neighbor_name and obj[link]['name'] != neighbor_name:
+                    difference = int(neighbor[link_to_self]['cost']) - int(obj[neighbor_link]['cost'])
+                    cost_to_link = int(obj[link]['cost']) + difference
+                    obj[link]['cost'] = cost_to_link
             obj[neighbor_link]['cost'] = neighbor[link_to_self]['cost']
             direct_costs[neighbor_name] = neighbor[link_to_self]['cost']
             obj['node']['updated'] = True
@@ -73,13 +78,15 @@ def ReconstructRoutingTable(obj, obj_links, neighbor, direct_costs):
             target_link = obj_links[target_name]
             neighbor_to_target = int(neighbor[n]['cost'])
             node_to_neighbor = int(direct_costs[neighbor_name])
-            if obj[target_link]['nextHop'] == neighbor_name and neighbor[n]['nextHop'] == obj['node']['name']:
+            if obj[target_link]['nextHop'] == neighbor_name:
                     obj_to_node = int(obj[target_link]['cost'])
                     obj_to_node += node_to_neighbor
                     obj[target_link]['cost'] = obj_to_node
                     if int(obj[target_link]['cost']) > int(direct_costs[target_name]):
                         obj[target_link]['cost'] = direct_costs[target_name]
                         obj[target_link]['nextHop'] = target_name
+                        obj['node']['updated'] = True
+                        
             else:
                 #print(f"From {neighbor['node']['name']} to {node_name}, cost {neighbor_to_node}")
                 #print(f"Current cost to {node_name}: {obj[node_link]['cost']}")
